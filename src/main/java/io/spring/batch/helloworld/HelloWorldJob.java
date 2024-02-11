@@ -5,6 +5,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -31,10 +32,18 @@ public class HelloWorldJob {
     @Bean
     public Step step1() {
         return this.stepBuilderFactory.get("step1")
-                .tasklet((stepContribution, chunkContext) -> {
-                    System.out.println("Hello, world!");
-                    return RepeatStatus.FINISHED;
-                }).build();
+                .tasklet(helloWorldTasklet()).build();
+    }
+
+    @Bean
+    public Tasklet helloWorldTasklet() {
+        return (stepContribution, chunkContext) -> {
+            String name = (String) chunkContext.getStepContext()
+                    .getJobParameters()
+                    .get("name");
+            System.out.printf("Hello %s!%n", name);
+            return RepeatStatus.FINISHED;
+        };
     }
 
     public static void main(String[] args) {
