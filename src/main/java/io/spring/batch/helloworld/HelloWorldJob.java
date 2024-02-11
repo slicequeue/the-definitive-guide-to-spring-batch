@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 
 @EnableBatchProcessing
 @SpringBootApplication
-public class HelloWorld {
+public class HelloWorldJob {
 
     @Autowired
     private JobBuilderFactory jobBuilderFactory;
@@ -38,7 +38,7 @@ public class HelloWorld {
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(HelloWorld.class, args);
+        SpringApplication.run(HelloWorldJob.class, args);
     }
 
 }
