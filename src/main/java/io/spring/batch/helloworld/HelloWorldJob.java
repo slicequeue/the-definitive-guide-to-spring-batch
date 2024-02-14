@@ -5,6 +5,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,7 @@ public class HelloWorldJob {
     @Bean
     public Step step1() {
         return this.stepBuilderFactory.get("step1")
-                .tasklet(helloWorldTasklet2(null))
+                .tasklet(helloWorldTasklet2(null)) // 스프링의 늦은 바인딩 적용한 tasklet 적용 매게변수 null
                 .build();
     }
 
@@ -54,12 +55,11 @@ public class HelloWorldJob {
     }
 
     // 스프링의 늦은 바인딩으로 JobParameters 코드를 참조하지 않고도 잡 파라미터를 컴포넌트에 주입하는 방식
-    @Bean
+    @Bean @StepScope
     public Tasklet helloWorldTasklet2(
             @Value("#{jobParameters['name']}") String name // 스프링 Expression Language(EL) 을 사용해 값을 전달
             // 이와 같은 늦은 바인딩으로 구성될 빈은 스텝이나 잡 스코프를 가져야 함
     ) {
-        //
         return (stepContribution, chunkContext) -> {
             System.out.printf("Hello %s!%n", name);
             return RepeatStatus.FINISHED;
