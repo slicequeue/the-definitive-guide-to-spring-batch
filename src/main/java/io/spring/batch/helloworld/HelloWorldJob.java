@@ -8,6 +8,7 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.CompositeJobParametersValidator;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +38,8 @@ public class HelloWorldJob {
         // DefaultJobParametersValidator 이용하여 필수 인자와 옵셔널 인자 목록 검증 객체 생성
         DefaultJobParametersValidator defaultJobParametersValidator = new DefaultJobParametersValidator(
                 // 필요한 인자들 다 보이도록 명시하도록 하자
-                new String[]{"fileName"},  // 필수 인자 목록
-                new String[]{"name"}       // 옵셔널 인자 목록
+                new String[]{"fileName"},               // 필수 인자 목록
+                new String[]{"name", "run.id"}          // 옵셔널 인자 목록 - run.id 추가
         );
         defaultJobParametersValidator.afterPropertiesSet();
 
@@ -51,7 +52,8 @@ public class HelloWorldJob {
     public Job job() {
         return this.jobBuilderFactory.get("basicJob")
                 .start(step1())
-                .validator(validator()) //
+                .validator(validator()) // 검증기 추가
+                .incrementer(new RunIdIncrementer()) // 스프링 배치 기본 구현체 매 실행 시 파라미터 이름이 run.id 인 long 타입 값을 증가 시킴
                 .build();
     }
 
