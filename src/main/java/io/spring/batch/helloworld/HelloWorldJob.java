@@ -6,6 +6,8 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.job.CompositeJobParametersValidator;
+import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+
+import java.lang.reflect.Array;
+import java.util.Arrays;
 
 @EnableBatchProcessing
 @SpringBootApplication
@@ -25,16 +30,35 @@ public class HelloWorldJob {
     private StepBuilderFactory stepBuilderFactory;
 
     @Bean
+    public CompositeJobParametersValidator validator() {
+        // CompositeJobParametersValidator 통해 두개 이상의 검증기를 사용할 경우 조합할 수 있도록 함
+        CompositeJobParametersValidator validator = new CompositeJobParametersValidator();
+
+        // DefaultJobParametersValidator 이용하여 필수 인자와 옵셔널 인자 목록 검증 객체 생성
+        DefaultJobParametersValidator defaultJobParametersValidator = new DefaultJobParametersValidator(
+                // 필요한 인자들 다 보이도록 명시하도록 하자
+                new String[]{"fileName"},  // 필수 인자 목록
+                new String[]{"name"}       // 옵셔널 인자 목록
+        );
+        defaultJobParametersValidator.afterPropertiesSet();
+
+        // 검증기 복수개 검증기 설정
+        validator.setValidators(Arrays.asList(new ParameterValidator(), defaultJobParametersValidator));
+        return validator;
+    }
+
+    @Bean
     public Job job() {
         return this.jobBuilderFactory.get("basicJob")
                 .start(step1())
+                .validator(validator()) //
                 .build();
     }
 
     @Bean
     public Step step1() {
         return this.stepBuilderFactory.get("step1")
-                .tasklet(helloWorldTasklet2(null)) // 스프링의 늦은 바인딩 적용한 tasklet 적용 매게변수 null
+                .tasklet(helloWorldTasklet2(null, null)) // 스프링의 늦은 바인딩 적용한 tasklet 적용 매게변수 null
                 .build();
     }
 
@@ -55,13 +79,16 @@ public class HelloWorldJob {
     }
 
     // 스프링의 늦은 바인딩으로 JobParameters 코드를 참조하지 않고도 잡 파라미터를 컴포넌트에 주입하는 방식
-    @Bean @StepScope
+    @Bean
+    @StepScope
     public Tasklet helloWorldTasklet2(
-            @Value("#{jobParameters['name']}") String name // 스프링 Expression Language(EL) 을 사용해 값을 전달
+            @Value("#{jobParameters['name']}") String name, // 스프링 Expression Language(EL) 을 사용해 값을 전달
+            @Value("#{jobParameters['fileName']}") String fileName
             // 이와 같은 늦은 바인딩으로 구성될 빈은 스텝이나 잡 스코프를 가져야 함
     ) {
         return (stepContribution, chunkContext) -> {
-            System.out.printf("Hello %s!%n", name);
+            System.out.printf("Hello, %s!%n", name);
+            System.out.printf("fileName= %s!%n", fileName);
             return RepeatStatus.FINISHED;
         };
     }
