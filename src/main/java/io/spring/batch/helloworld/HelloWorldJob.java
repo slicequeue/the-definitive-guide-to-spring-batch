@@ -39,7 +39,11 @@ public class HelloWorldJob {
         DefaultJobParametersValidator defaultJobParametersValidator = new DefaultJobParametersValidator(
                 // 필요한 인자들 다 보이도록 명시하도록 하자
                 new String[]{"fileName"},               // 필수 인자 목록
-                new String[]{"name", "run.id"}          // 옵셔널 인자 목록 - run.id 추가
+                new String[]{ // 옵셔널 인자 목록
+                        "name",
+//                        "run.id" // run.id 추가 RunIdIncrementer 적용
+                        "currentDate" // DailyJobTimestamper 정의한 currentDate 인자 추가
+                }
         );
         defaultJobParametersValidator.afterPropertiesSet();
 
@@ -53,7 +57,8 @@ public class HelloWorldJob {
         return this.jobBuilderFactory.get("basicJob")
                 .start(step1())
                 .validator(validator()) // 검증기 추가
-                .incrementer(new RunIdIncrementer()) // 스프링 배치 기본 구현체 매 실행 시 파라미터 이름이 run.id 인 long 타입 값을 증가 시킴
+//                .incrementer(new RunIdIncrementer()) // 스프링 배치 기본 구현체 매 실행 시 파라미터 이름이 run.id 인 long 타입 값을 증가 시킴
+                .incrementer(new DailyJobTimestamper())
                 .build();
     }
 
