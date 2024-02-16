@@ -59,6 +59,7 @@ public class HelloWorldJob {
                 .validator(validator()) // 검증기 추가
 //                .incrementer(new RunIdIncrementer()) // 스프링 배치 기본 구현체 매 실행 시 파라미터 이름이 run.id 인 long 타입 값을 증가 시킴
                 .incrementer(new DailyJobTimestamper())
+                .listener(new JobLoggerListener())
                 .build();
     }
 
